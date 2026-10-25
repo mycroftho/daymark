@@ -3,7 +3,7 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 class Element {
  constructor(){this.children=[];this.value='';this.style={setProperty(){}};this.dataset={};this.classList={toggle(){}}}
- append(...items){this.children.push(...items)}
+ append(...items){for(const item of items){if(item.parentElement){const previous=item.parentElement.children;const index=previous.indexOf(item);if(index>=0)previous.splice(index,1)}this.children.push(item);item.parentElement=this;}this.appendCalls=(this.appendCalls||0)+1}
  replaceChildren(...items){this.children=items}
  setAttribute(name,value){this[name]=value}
  setCustomValidity(value){this.validationMessage=value}
@@ -103,6 +103,10 @@ assert.equal(elements.get('#historyResultsHeader').hidden,false);
 elements.get('#search').value='example';
 vm.runInContext('render()',ctx);
 assert.equal(elements.get('#historyResultsTitle').textContent,'Search results');
+assert.equal(elements.get('#searchControl').parentElement,elements.get('#historySearchHost'));
+const historyMoves=elements.get('#historySearchHost').appendCalls;
+vm.runInContext('render();render()',ctx);
+assert.equal(elements.get('#historySearchHost').appendCalls,historyMoves,'Typing does not move the search field or lose keyboard focus');
 const tones=[];
 class TestAudioContext {
  state='running';currentTime=0;destination={};

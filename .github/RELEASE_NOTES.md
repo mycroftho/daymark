@@ -1,9 +1,9 @@
-Daymark 1.2.0 brings a clearer personal calendar, completed-task search, and a gentle reminder sound.
+Daymark 1.2.1 brings a clearer personal calendar, completed-task search, and a gentle reminder sound.
 
 ## Downloads
 
-- **Windows x64:** `Daymark-Setup-1.2.0.exe`
-- **Mac (Apple silicon and Intel):** `Daymark-1.2.0-mac-universal.dmg`
+- **Windows x64:** `Daymark-Setup-1.2.1.exe`
+- **Mac (Apple silicon and Intel):** `Daymark-1.2.1-mac-universal.dmg`
 - `SHA256SUMS.txt` contains download checksums.
 
 ## What's included

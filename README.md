@@ -10,8 +10,8 @@
 
 | 系统 | 下载文件 | 使用方式 |
 | --- | --- | --- |
-| Windows x64 | `Daymark-Setup-1.2.0.exe` | 运行安装程序，可选择安装盘和目录 |
-| Mac：Apple silicon / Intel | `Daymark-1.2.0-mac-universal.dmg` | 打开 DMG，将 Daymark 拖入 Applications |
+| Windows x64 | `Daymark-Setup-1.2.1.exe` | 运行安装程序，可选择安装盘和目录 |
+| Mac：Apple silicon / Intel | `Daymark-1.2.1-mac-universal.dmg` | 打开 DMG，将 Daymark 拖入 Applications |
 
 每次 Release 同时提供 Windows、Mac 安装包和 `SHA256SUMS.txt`。源码 ZIP 不是安装包，请在 Release 的 **Assets** 中下载。
 
@@ -35,6 +35,8 @@
 4. **Clear filters** 恢复完整记录；取消任务的勾选可将它恢复到 Tasks。
 
 History 只显示已完成任务，日期筛选使用的是**完成日期**。它与 Tasks、Calendar 分别保留各自的搜索和分类状态，不会互相影响。
+
+![History 关键词搜索示例](docs/history.png)
 
 ## 提醒与提示音
 
