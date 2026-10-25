@@ -3,12 +3,14 @@ name: Build and release Daymark
 on:
   push:
     tags: ['v*']
+    branches: [main]
+    paths: [package.json]
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing version tag to build, e.g. v1.3.0
+        description: Existing version tag to build, e.g. v1.3.1
         required: true
-        default: v1.3.0
+        default: v1.3.1
 
 permissions:
   contents: read
@@ -18,7 +20,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.sha }}
+      - id: version
+        run: echo "tag=v$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -34,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.event.inputs.tag || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -44,7 +58,7 @@ jobs:
       - name: Verify tag matches package version
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: node -e 'if (process.env.RELEASE_TAG !== "v" + require("./package.json").version) process.exit(1)'
       - name: Build Windows installer
         if: runner.os == 'Windows'
@@ -80,18 +94,18 @@ jobs:
             release/*.dmg
 
   publish:
-    needs: build
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.event.inputs.tag || github.sha }}
       - uses: actions/download-artifact@v4
         with:
           pattern: daymark-*
@@ -104,6 +118,6 @@ jobs:
           if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" artifacts/* --clobber
           else
-            gh release create "$RELEASE_TAG" artifacts/* --draft --verify-tag --title "Daymark $RELEASE_TAG" --notes-file .github/RELEASE_NOTES.md
+            gh release create "$RELEASE_TAG" artifacts/* --draft --target "${{ github.sha }}" --title "Daymark $RELEASE_TAG" --notes-file .github/RELEASE_NOTES.md
           fi
           gh release edit "$RELEASE_TAG" --draft=false --latest

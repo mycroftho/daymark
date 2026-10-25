@@ -6,14 +6,14 @@
 
 **[下载最新版本](https://github.com/mycroftho/daymark/releases/latest)** · [所有 Release](https://github.com/mycroftho/daymark/releases) · [报告问题](https://github.com/mycroftho/daymark/issues)
 
-v1.3.0 增加风铃声、标题旁的 Little wins / Progress、CSV 手动迁移，并修复 Week 视图宽度和新安装的通知默认设置。
+v1.3.1 增加风铃声、标题旁的 Little wins / Progress、CSV 手动迁移，并修复 Week 视图宽度和新安装的通知默认设置。
 
 ## 下载与安装
 
 | 系统 | 下载文件 | 使用方式 |
 | --- | --- | --- |
-| Windows x64 | `Daymark-Setup-1.3.0.exe` | 运行安装程序，可选择安装盘和目录 |
-| Mac：Apple silicon / Intel | `Daymark-1.3.0-mac-universal.dmg` | 打开 DMG，将 Daymark 拖入 Applications |
+| Windows x64 | `Daymark-Setup-1.3.1.exe` | 运行安装程序，可选择安装盘和目录 |
+| Mac：Apple silicon / Intel | `Daymark-1.3.1-mac-universal.dmg` | 打开 DMG，将 Daymark 拖入 Applications |
 
 每次 Release 同时提供 Windows、Mac 安装包和 `SHA256SUMS.txt`。源码 ZIP 不是安装包，请在 Release 的 **Assets** 中下载。
 
@@ -119,3 +119,9 @@ smoke-test.cjs                   界面逻辑回归检查
 ## License
 
 [MIT](LICENSE)。第三方组件遵循各自的许可证。
+
+### 图标与安装提示
+
+Windows 安装器、卸载器、窗口和快捷方式使用同一套闹钟图标。升级后启动一次 Daymark，会更新开始菜单及仍存在的 Daymark 桌面快捷方式；不会重新创建已删除的桌面快捷方式。Windows 搜索缓存可能稍后刷新。
+
+当前发行版没有受信任的发布者签名。SmartScreen／未知发布者提示无法通过改图标或普通代码消除；有效签名也不保证新版本立即免提示。安装确认由系统和安装程序保留，macOS 版本尚未公证。
