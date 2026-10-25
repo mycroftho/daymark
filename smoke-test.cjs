@@ -16,7 +16,7 @@ const document = {querySelector(s){if(!elements.has(s))elements.set(s,new Elemen
 const persisted = new Map();
 const notices=[];
 class Notification {static permission='granted';constructor(title,options){notices.push({title,...options})}}
-const ctx = vm.createContext({document,localStorage:{getItem:k=>persisted.get(k)||null,setItem:(k,v)=>persisted.set(k,v)},window:{Notification,isSecureContext:true,addEventListener(){},focus(){}},Notification,setTimeout(){},clearTimeout(){},setInterval(){},console,Date,Blob,URL});
+const ctx = vm.createContext({document,DaymarkTransfer:require('./data-transfer.js'),localStorage:{getItem:k=>persisted.get(k)||null,setItem:(k,v)=>persisted.set(k,v)},window:{Notification,isSecureContext:true,addEventListener(){},focus(){}},Notification,setTimeout(){},clearTimeout(){},setInterval(){},console,Date,Blob,URL});
 vm.runInContext(fs.readFileSync('app.js','utf8'),ctx);
 elements.get('#categoryFilter').value='all';
 vm.runInContext(`tasks=[{id:'sample',title:'Morning task',notes:'',date:today(),time:'09:00',priority:'normal',reminder:'0',done:false},{id:'afternoon',title:'Afternoon task',notes:'',date:today(),time:'14:00',priority:'normal',reminder:'none',done:false}];page='calendar';view='day';render();`,ctx);
@@ -114,7 +114,7 @@ class TestAudioContext {
  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}}
 }
 ctx.window.AudioContext=TestAudioContext;
-vm.runInContext(`soundContext=new window.AudioContext();settings.reminderSound=true;settings.soundVolume=35;settings.desktopNotifications=false;tasks=[{id:'audio1',title:'One',date:'2000-01-01',time:'09:00',reminder:'0'},{id:'audio2',title:'Two',date:'2000-01-01',time:'09:00',reminder:'0'}];reminders();reminders()`,ctx);
+vm.runInContext(`soundContext=new window.AudioContext();settings.reminderSound=true;settings.soundTone='beep';settings.soundVolume=35;settings.desktopNotifications=false;tasks=[{id:'audio1',title:'One',date:'2000-01-01',time:'09:00',reminder:'0'},{id:'audio2',title:'Two',date:'2000-01-01',time:'09:00',reminder:'0'}];reminders();reminders()`,ctx);
 assert.equal(tones.length,1,'Simultaneous due tasks play one beep and do not repeat');
 assert.ok(JSON.parse(persisted.get('shixu-tasks-v1')).every(t=>t.soundReminderToken),'Sound deduplication persists');
 vm.runInContext(`tasks[0].snoozedUntil='2000-01-01T10:00:00';reminders()`,ctx);
@@ -123,6 +123,8 @@ vm.runInContext(`settings.reminderSound=false;tasks[0].snoozedUntil='2000-01-01T
 assert.equal(tones.length,2,'Sound switch mutes reminders');
 vm.runInContext(`settings.reminderSound=true;settings.soundVolume=0;reminders()`,ctx);
 assert.equal(tones.length,2,'Zero volume is silent');
+vm.runInContext(`settings.soundVolume=35;settings.soundTone='chime';playReminderSound(true)`,ctx);
+assert.equal(tones.length,5,'Wind chime has three softly staggered notes');
 vm.runInContext(`tasks=[{id:'detail',title:'Lecture',date:today(),time:'09:00',duration:90,location:'Room 203',notes:'Bring notebook.\\nRead chapter 2.',reminder:'5',category:'class',priority:'high'}];openEvent(tasks[0])`,ctx);
 const textOf=el=>[el.textContent||'',...el.children.map(textOf)].join(' ');
 assert.ok(textOf(elements.get('#eventDetails')).includes('1h 30m'));
@@ -131,3 +133,16 @@ assert.ok(textOf(elements.get('#eventDetails')).includes('Read chapter 2.'));
 vm.runInContext(`$('#eventComplete').onclick()`,ctx);
 assert.equal(vm.runInContext('tasks[0].done',ctx),true,'Calendar details can complete a task');
 console.log('Passed: history result placement, reminder sound batching/mute/snooze, calendar duration/location/notes details.');
+(async()=>{
+ const transfer=require('./data-transfer.js');
+ const incoming={id:'csv-import',title:'CSV lecture',date:'2026-10-25',time:'16:00',duration:45,notes:'多行\nNotes',location:'Room 5',category:'class',priority:'normal',reminder:'none',done:false};
+ const csv=transfer.encodeCSV([incoming]);
+ document.querySelector('#importPolicy').value='keep';
+ elements.get('#importFile').files=[{name:'migration.csv',size:csv.length,text:async()=>csv}];
+ await elements.get('#importFile').onchange();
+ assert.equal(vm.runInContext(`tasks.find(t=>t.id==='csv-import').notes`,ctx),incoming.notes);
+ await elements.get('#importFile').onchange();
+ assert.equal(vm.runInContext(`tasks.filter(t=>t.id==='csv-import').length`,ctx),1,'Repeated file import is idempotent');
+ assert.ok(JSON.parse(persisted.get('shixu-tasks-v1')).some(t=>t.id==='csv-import'));
+ console.log('Passed: CSV file handler persists imports and skips duplicate task IDs.');
+})().catch(error=>{console.error(error);process.exitCode=1});

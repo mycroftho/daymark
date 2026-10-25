@@ -6,12 +6,14 @@
 
 **[下载最新版本](https://github.com/mycroftho/daymark/releases/latest)** · [所有 Release](https://github.com/mycroftho/daymark/releases) · [报告问题](https://github.com/mycroftho/daymark/issues)
 
+v1.3.0 增加风铃声、标题旁的 Little wins / Progress、CSV 手动迁移，并修复 Week 视图宽度和新安装的通知默认设置。
+
 ## 下载与安装
 
 | 系统 | 下载文件 | 使用方式 |
 | --- | --- | --- |
-| Windows x64 | `Daymark-Setup-1.2.1.exe` | 运行安装程序，可选择安装盘和目录 |
-| Mac：Apple silicon / Intel | `Daymark-1.2.1-mac-universal.dmg` | 打开 DMG，将 Daymark 拖入 Applications |
+| Windows x64 | `Daymark-Setup-1.3.0.exe` | 运行安装程序，可选择安装盘和目录 |
+| Mac：Apple silicon / Intel | `Daymark-1.3.0-mac-universal.dmg` | 打开 DMG，将 Daymark 拖入 Applications |
 
 每次 Release 同时提供 Windows、Mac 安装包和 `SHA256SUMS.txt`。源码 ZIP 不是安装包，请在 Release 的 **Assets** 中下载。
 
@@ -43,12 +45,19 @@ History 只显示已完成任务，日期筛选使用的是**完成日期**。�
 在 **Appearance & reminders** 中：
 
 - 开启 **Send system notifications**，点击 **Send test notification** 测试系统通知。
-- **Play a gentle beep** 控制提示音，Volume 控制音量，**Test sound** 可以试听。
+- **Play reminder sound** 控制提示音，Volume 控制音量，**Test sound** 可以试听。
+- 可在 **Sound** 选择 **Wind chime** 或 **Gentle beep**。声音和页内提醒不依赖系统通知是否开启。
 - 同一批到期任务只响一次；延后后可以再次提醒。系统通知和提示音开关相互独立。
 
 关闭窗口后，应用仍在 Windows 托盘或 Mac 菜单栏运行。选择 **Quit Daymark** 才会完全退出并停止提醒。应用不默认开机自启。电脑睡眠、浏览器暂停和系统勿扰模式可能影响提醒；恢复运行后会重新检查到期任务。
 
 Windows 使用固定通知身份和开始菜单快捷方式，收到系统 `shown` 回执后才记录为已显示。请在系统设置中检查 Daymark 的横幅、通知和 Focus / Do Not Disturb；Mac 需要在系统设置中允许 Daymark 通知。
+
+应用内的 **On in Daymark** 与操作系统横幅权限是两个独立状态。已完成任务不会再触发到期提醒；测试时请先点击 Send test notification。系统回执不代表一定出现可见横幅，勿扰模式或关闭横幅可能只将通知收进通知中心。
+
+### 体积
+
+应用代码本身很小，安装体积主要来自 Electron / Chromium。构建仅保留英文、简体中文和繁体中文语言资源，使用最大压缩；保留音频、图形、GPU 回退组件和许可证文件，避免影响功能。实际安装包大小以 Release 文件为准。
 
 ## 数据与备份
 
@@ -59,6 +68,8 @@ Windows 使用固定通知身份和开始菜单快捷方式，收到系统 `show
 | 网页版 | 当前浏览器的 localStorage，与桌面版独立 |
 
 主数据文件保留兼容名称 `still-data.json`。升级时不要删除数据文件夹；卸载程序不会主动删除它。迁移设备或从网页切换到桌面版时，先 **Export backup**，再在新环境 **Import backup**。导入仅新增不存在的任务，不覆盖已有任务。
+
+提供 **Export tasks as CSV** 和 **Import CSV / JSON**：导出文件后可用 U 盘、局域网传文件等方式带到另一台设备。相同任务 ID 默认保留本机版本；选择 **Update from imported file** 可用文件中的版本更新。CSV 保留多行 Notes、分类、时长、地点和完成状态；JSON 导出还保留偏好设置备份，但导入时只合并任务。格式约定见 [手动迁移格式](docs/transfer-format.md)，可供未来手机版兼容。
 
 ## 本地开发与网页预览
 

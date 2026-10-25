@@ -5,4 +5,7 @@ function dueTasks(tasks, now = Date.now()) {
     return Number.isFinite(due) && now >= due && !task.systemNotifiedAt;
   });
 }
-module.exports = {dueTasks};
+function notificationsEnabled(settings={}) {
+  return settings.desktopNotifications !== false;
+}
+module.exports = {dueTasks,notificationsEnabled};

@@ -1,5 +1,8 @@
 const assert=require('node:assert/strict');
-const {dueTasks}=require('./scheduler.cjs');
+const {dueTasks,notificationsEnabled}=require('./scheduler.cjs');
+assert.equal(notificationsEnabled({}),true,'A fresh install does not silently disable scheduled notifications');
+assert.equal(notificationsEnabled({desktopNotifications:false}),false,'An explicit user opt-out stays disabled');
+assert.equal(notificationsEnabled({desktopNotifications:true}),true);
 const base={id:'1',title:'Class',date:'2026-10-25',time:'09:00',reminder:'5'};
 const now=new Date('2026-10-25T08:55:00').getTime();
 assert.equal(dueTasks([base],now-1).length,0);

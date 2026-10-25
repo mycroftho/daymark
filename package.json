@@ -1,13 +1,13 @@
 {
   "name": "still-planner",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "A quiet personal schedule, to-do list and calendar for Windows and macOS",
   "author": "Daymark",
   "private": true,
   "main": "desktop/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node smoke-test.cjs && node desktop/scheduler-test.cjs",
+    "test": "node smoke-test.cjs && node desktop/scheduler-test.cjs && node data-transfer.test.cjs",
     "dist": "electron-builder --win nsis --x64 --publish never",
     "dist:mac": "electron-builder --mac --universal --publish never",
     "check": "node --check app.js && node --check desktop/main.cjs && npm test"
@@ -22,6 +22,7 @@
     "files": [
       "index.html",
       "app.js",
+      "data-transfer.js",
       "style.css",
       "desktop/main.cjs",
       "desktop/preload.cjs",
@@ -60,7 +61,14 @@
     "dmg": {
       "title": "Daymark ${version}",
       "sign": false
-    }
+    },
+    "electronLanguages": [
+      "en-US",
+      "en-GB",
+      "zh-CN",
+      "zh-TW"
+    ],
+    "compression": "maximum"
   },
   "devDependencies": {
     "electron": "45.0.0",

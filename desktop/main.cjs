@@ -1,7 +1,7 @@
-const {app,BrowserWindow,ipcMain,Notification,Tray,Menu,nativeImage,shell,powerMonitor} = require('electron');
+const {app,BrowserWindow,ipcMain,Notification,Tray,Menu,nativeImage,shell,powerMonitor,screen} = require('electron');
 const fs=require('node:fs');
 const path=require('node:path');
-const {dueTasks}=require('./scheduler.cjs');
+const {dueTasks,notificationsEnabled}=require('./scheduler.cjs');
 const TASKS='shixu-tasks-v1', SETTINGS='shixu-settings-v1';
 const APP_ID='local.still.planner';
 app.setName('Daymark');
@@ -27,7 +27,7 @@ function notify({title,body,tag},task){
  if(!Notification.isSupported())return false;
  if(retryAfter.get(tag)>Date.now())return false;
  if(pendingNotifications.has(tag))return true;
- const settings=read(SETTINGS,{});if(settings.desktopNotifications!==true)return false;
+ const settings=read(SETTINGS,{});if(!notificationsEnabled(settings))return false;
  if(task?.systemNotifiedAt)return true;
  try{
   const notification=new Notification({title:String(title).slice(0,200),body:String(body).slice(0,1200),icon:path.join(__dirname,'..','build','icon.png'),silent:true,timeoutType:'default'});
@@ -41,7 +41,7 @@ function notify({title,body,tag},task){
   logNotification('requested',tag);notification.show();return true;
  }catch(error){notificationError=String(error.message);retryAfter.set(tag,Date.now()+60000);return false;}
 }
-function scan(){if(loadError)return;const settings=read(SETTINGS,{});if(settings.desktopNotifications!==true)return;for(const task of dueTasks(read(TASKS,[])))notify({title:'Daymark · Reminder',body:task.title+' · '+task.date+' '+task.time,tag:task.id},task);}
+function scan(){if(loadError)return;const settings=read(SETTINGS,{});if(!notificationsEnabled(settings))return;for(const task of dueTasks(read(TASKS,[])))notify({title:'Daymark · Reminder',body:task.title+' · '+task.date+' '+task.time,tag:task.id},task);}
 function openNotificationSettings(){return shell.openExternal(process.platform==='darwin'?'x-apple.systempreferences:com.apple.preference.notifications':'ms-settings:notifications')}
 function trusted(event){return win&&event.sender===win.webContents;}
 ipcMain.on('storage:get',(event,key)=>{event.returnValue=trusted(event)&&[TASKS,SETTINGS].includes(key)?data[key]??null:null;});
@@ -57,7 +57,9 @@ app.whenReady().then(async()=>{
  load();
  if(!loadError&&!smoke&&data.notificationDeliveryVersion!==2){const previous=read(TASKS,[]);for(const task of previous)if(!task.done&&task.reminder!=='none'&&!task.reminderAcknowledged)task.systemNotifiedAt=null;data[TASKS]=JSON.stringify(previous);data.notificationDeliveryVersion=2;persist();}
  try{registerShortcuts()}catch(error){notificationError=error.message;logNotification('registration-failed',APP_ID,error.message)}
- win=new BrowserWindow({width:1130,height:850,minWidth:650,minHeight:600,title:'Daymark',icon:path.join(__dirname,'..','build','icon.png'),show:!smoke,backgroundColor:'#f4f6f2',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,autoplayPolicy:'no-user-gesture-required'}});
+ const workArea=screen.getPrimaryDisplay().workAreaSize;
+ const availableWidth=Math.max(320,workArea.width-48),availableHeight=Math.max(240,workArea.height-48);
+ win=new BrowserWindow({width:Math.min(1180,availableWidth),height:Math.min(850,availableHeight),minWidth:Math.min(650,availableWidth),minHeight:Math.min(560,availableHeight),title:'Daymark',icon:path.join(__dirname,'..','build','icon.png'),show:!smoke,backgroundColor:'#f4f6f2',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,autoplayPolicy:'no-user-gesture-required'}});
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
  win.webContents.on('will-navigate',event=>event.preventDefault());
  win.webContents.session.setPermissionRequestHandler((_,__,callback)=>callback(false));
