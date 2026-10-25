@@ -1,0 +1,70 @@
+{
+  "name": "still-planner",
+  "version": "1.2.0",
+  "description": "A quiet personal schedule, to-do list and calendar for Windows and macOS",
+  "author": "Daymark",
+  "private": true,
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node smoke-test.cjs && node desktop/scheduler-test.cjs",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "dist:mac": "electron-builder --mac --universal --publish never",
+    "check": "node --check app.js && node --check desktop/main.cjs && npm test"
+  },
+  "build": {
+    "appId": "local.still.planner",
+    "productName": "Daymark",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "index.html",
+      "app.js",
+      "style.css",
+      "desktop/main.cjs",
+      "desktop/preload.cjs",
+      "desktop/scheduler.cjs",
+      "build/icon.png",
+      "build/tray.png",
+      "build/trayTemplate.png"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "signExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Daymark",
+      "runAfterFinish": false,
+      "artifactName": "Daymark-Setup-${version}.exe",
+      "include": "build/installer.nsh"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.productivity",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "Daymark-${version}-mac-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "Daymark ${version}",
+      "sign": false
+    }
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  },
+  "license": "MIT"
+}

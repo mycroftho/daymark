@@ -1,0 +1,109 @@
+name: Build and release Daymark
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build, e.g. v1.2.0
+        required: true
+        default: v1.2.0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Verify tag matches package version
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: node -e 'if (process.env.RELEASE_TAG !== "v" + require("./package.json").version) process.exit(1)'
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        run: npm run dist
+      - name: Test the packaged Windows application
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force .desktop-test | Out-Null
+          $app = Start-Process -FilePath (Resolve-Path 'release/win-unpacked/Daymark.exe') -ArgumentList '--still-smoke-test' -WindowStyle Hidden -PassThru -RedirectStandardOutput '.desktop-test/stdout.txt' -RedirectStandardError '.desktop-test/stderr.txt'
+          if (-not $app.WaitForExit(90000)) { $app.Kill(); throw 'Desktop smoke test timed out' }
+          Get-Content '.desktop-test/stderr.txt'
+          if ($app.ExitCode -ne 0) { throw 'Packaged application failed to launch' }
+          node scripts/assert-smoke.cjs .desktop-test/stdout.txt
+      - name: Build universal macOS installer
+        if: runner.os == 'macOS'
+        run: npm run dist:mac
+      - name: Test the packaged macOS application
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          mkdir -p .desktop-test
+          release/mac-universal/Daymark.app/Contents/MacOS/Daymark --still-smoke-test > .desktop-test/stdout.txt 2> .desktop-test/stderr.txt
+          cat .desktop-test/stderr.txt
+          node scripts/assert-smoke.cjs .desktop-test/stdout.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daymark-${{ matrix.platform }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            release/*.exe
+            release/*.dmg
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: daymark-*
+          merge-multiple: true
+          path: artifacts
+      - run: node scripts/checksums.cjs artifacts
+      - name: Publish both platforms together
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" artifacts/* --clobber
+          else
+            gh release create "$RELEASE_TAG" artifacts/* --draft --verify-tag --title "Daymark $RELEASE_TAG" --notes-file .github/RELEASE_NOTES.md
+          fi
+          gh release edit "$RELEASE_TAG" --draft=false --latest

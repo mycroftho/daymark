@@ -1,0 +1,17 @@
+node_modules/
+release/
+.desktop-test/
+*.log
+.npm-cache/
+.build-cache/
+.tools/
+*.tmp
+.DS_Store
+Thumbs.db
+still-data.json
+*-backup-*.json
+notifications.log*
+reminder-test-report.json
+prepare-release.py
+scripts/check-git-auth.py
+scripts/github-admin.py
